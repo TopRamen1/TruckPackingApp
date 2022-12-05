@@ -79,3 +79,34 @@ def get_position(dict_of_used_p_s_: Dict[int, int]) -> List[int]:
     del value
 
     return pos
+
+
+def get_counter(list_divisors_: List[List[int]]) -> List[int]:
+    """Functions needed for count counter (used in function: crossover)"""
+
+    counter = [0]
+    for i, j in enumerate(list_divisors_):
+        value = len(j)
+        value = counter[i] + value
+        counter.append(value)
+    del value
+
+    return counter
+
+
+def find_divisors(dict_of_pack_sto: Dict[int, int]) -> Dict[int, List[int]]:
+    """Generate divisors for outside user to avoid conflict (used in GUI.py), because divisors should be divisible by
+       number of package which goes to one specific address (example: 15 packages to address: 1, possible divisors:
+       [1,3,5,15])"""
+
+    final_dict = {}
+    for ind, item in dict_of_pack_sto.items():
+        i = 1
+        temp_list = []
+        while i <= item:
+            if item % i == 0:
+                temp_list.append(i)
+            i = i + 1
+        final_dict[ind] = temp_list
+
+    return final_dict
