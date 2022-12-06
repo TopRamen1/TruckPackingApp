@@ -232,3 +232,60 @@ def random_chromosome(data: MainStorage):
                         break
 
     return ch_t, ch_p
+
+def init_pop(data: MainStorage, pop_size: int) -> List[Individual]:
+    """Function witch initializes population and returns it as a list of Individuals
+    :return: random population"""
+
+    population = []
+    for i in range(0, pop_size):
+        new_ch = random_chromosome(data)
+        population.append(Individual(new_ch[0], new_ch[1]))
+    return population
+
+
+def fitness(data: MainStorage, pop: List[Individual]):
+    """Calculate probability for every individual using objective fcn
+       :return: rated population"""
+
+    sum1 = 0
+    sum3 = 0
+    obj_fcn_vals = []
+    for i in range(len(pop)):
+        val = obj_fcn(data, pop[i])
+        sum3 += val
+        obj_fcn_vals.append((i, val))
+        sum1 += i + 1
+
+    obj_fcn_vals.sort(key=lambda e: e[1])
+    av_sol = sum3 / len(obj_fcn_vals)
+
+    sum2 = 0
+    j = len(obj_fcn_vals)
+    for i, val in obj_fcn_vals:
+        pop[i].prob = j / sum1
+        pop[i].obj_fcn = val
+        sum2 += j / sum1
+        j -= 1
+
+    best_sol = deepcopy(pop[obj_fcn_vals[0][0]])
+    best_val = best_sol.obj_fcn
+
+    return pop, best_sol, best_val, av_sol
+
+
+def selection(data: MainStorage, pop: List[Individual]):
+    """Select individuals based on probability calculated by fitness
+    :return: population to reproduce"""
+
+    new_pop = []
+    while len(new_pop) < len(pop):
+        r = random.random()
+        prob = 0
+        for i in pop:
+            prob += i.prob
+            if prob > r:
+                new_pop.append(i)
+                break
+
+    return new_pop
