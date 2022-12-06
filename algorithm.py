@@ -135,3 +135,52 @@ def obj_fcn(data_mst: MainStorage, data_ind: Individual) -> float:
     final_result = sum_1 + sum_2 + sum_3
 
     return final_result
+
+
+class Exception1(Exception):
+    def __init__(self, message="Przekroczono pierwszy warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class Exception2(Exception):
+    def __init__(self, message="Przekroczono drugi warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class Exception3(Exception):
+    def __init__(self, message="Przekroczono trzeci warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+def check_lims(data_mst: MainStorage, data_ind: Individual):
+    """Checks limits and raises exceptions"""
+
+    act_package_pos = [j for j, p in enumerate(data_ind.ch_p)]
+    act_truck_pos = [i for i, m in enumerate(data_ind.ch_t) if m != -1]
+    sum_weights = 0
+
+    """ Checking the first limit """
+    for i in data_mst.list_of_packages:
+        sum_weights += i.weight
+    sum_loads = 0
+    for j in data_mst.list_of_trucks:
+        sum_loads += j.load
+    if sum_weights > sum_loads:
+        raise Exception1
+
+    """ Checking the second limit """
+    for i in act_truck_pos:
+        sum_weights = 0
+        for j in act_package_pos:
+            if i == data_ind.ch_p[j]:
+                sum_weights += data_mst.list_of_packages[j].weight
+        if sum_weights > data_mst.list_of_trucks[i].load:
+            raise Exception2
+
+    """ Checking the third limit """
+    for i in data_ind.ch_p:
+        if i == -1:
+            raise Exception3
