@@ -135,3 +135,157 @@ def obj_fcn(data_mst: MainStorage, data_ind: Individual) -> float:
     final_result = sum_1 + sum_2 + sum_3
 
     return final_result
+
+
+class Exception1(Exception):
+    def __init__(self, message="Przekroczono pierwszy warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class Exception2(Exception):
+    def __init__(self, message="Przekroczono drugi warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+class Exception3(Exception):
+    def __init__(self, message="Przekroczono trzeci warunek ograniczający"):
+        self.message = message
+        super().__init__(self.message)
+
+
+def check_lims(data_mst: MainStorage, data_ind: Individual):
+    """Checks limits and raises exceptions"""
+
+    act_package_pos = [j for j, p in enumerate(data_ind.ch_p)]
+    act_truck_pos = [i for i, m in enumerate(data_ind.ch_t) if m != -1]
+    sum_weights = 0
+
+    """ Checking the first limit """
+    for i in data_mst.list_of_packages:
+        sum_weights += i.weight
+    sum_loads = 0
+    for j in data_mst.list_of_trucks:
+        sum_loads += j.load
+    if sum_weights > sum_loads:
+        raise Exception1
+
+    """ Checking the second limit """
+    for i in act_truck_pos:
+        sum_weights = 0
+        for j in act_package_pos:
+            if i == data_ind.ch_p[j]:
+                sum_weights += data_mst.list_of_packages[j].weight
+        if sum_weights > data_mst.list_of_trucks[i].load:
+            raise Exception2
+
+    """ Checking the third limit """
+    for i in data_ind.ch_p:
+        if i == -1:
+            raise Exception3
+
+def random_chromosome(data: MainStorage):
+    """Generates a random Chromosome for individual
+    :return: random chromosome"""
+
+    # Id lists for calculations
+    storage_ids = list(range(0, len(data.list_of_storages)))
+    truck_ids = list(range(0, len(data.list_of_trucks)))
+    package_ids = list(range(0, len(data.list_of_packages)))
+
+    # Init chromosome
+    ch_t = [-1] * len(data.list_of_trucks)
+    ch_p = [-1] * len(data.list_of_packages)
+
+    # Sorted packages by address
+    ids_by_address = [[] for i in range(len(storage_ids))]
+    for p_id in package_ids:
+        ids_by_address[data.list_of_packages[p_id].address].append(p_id)
+
+    while package_ids:
+        for p_to_add in ids_by_address:
+            while p_to_add:
+                if not truck_ids:
+                    print("to many packages error")
+                    return [0], [0]
+
+                t = data.list_of_trucks[random.choice(truck_ids)]  # Random truck
+                truck_ids.remove(t.id)
+
+                p = data.list_of_packages[random.choice(p_to_add)]  # Random package
+
+                ch_t[t.id] = p.address  # Adding truck address to chromosome
+
+                weight_sum = 0
+                while t.load >= weight_sum + p.weight:
+                    weight_sum += p.weight
+
+                    ch_p[p.id] = t.id  # Adding truck id for package in chromosome
+
+                    package_ids.remove(p.id)
+                    p_to_add.remove(p.id)
+
+                    if p_to_add:
+                        p = data.list_of_packages[random.choice(p_to_add)]
+                    else:
+                        break
+
+    return ch_t, ch_p
+
+def init_pop(data: MainStorage, pop_size: int) -> List[Individual]:
+    """Function witch initializes population and returns it as a list of Individuals
+    :return: random population"""
+
+    population = []
+    for i in range(0, pop_size):
+        new_ch = random_chromosome(data)
+        population.append(Individual(new_ch[0], new_ch[1]))
+    return population
+
+
+def fitness(data: MainStorage, pop: List[Individual]):
+    """Calculate probability for every individual using objective fcn
+       :return: rated population"""
+
+    sum1 = 0
+    sum3 = 0
+    obj_fcn_vals = []
+    for i in range(len(pop)):
+        val = obj_fcn(data, pop[i])
+        sum3 += val
+        obj_fcn_vals.append((i, val))
+        sum1 += i + 1
+
+    obj_fcn_vals.sort(key=lambda e: e[1])
+    av_sol = sum3 / len(obj_fcn_vals)
+
+    sum2 = 0
+    j = len(obj_fcn_vals)
+    for i, val in obj_fcn_vals:
+        pop[i].prob = j / sum1
+        pop[i].obj_fcn = val
+        sum2 += j / sum1
+        j -= 1
+
+    best_sol = deepcopy(pop[obj_fcn_vals[0][0]])
+    best_val = best_sol.obj_fcn
+
+    return pop, best_sol, best_val, av_sol
+
+
+def selection(data: MainStorage, pop: List[Individual]):
+    """Select individuals based on probability calculated by fitness
+    :return: population to reproduce"""
+
+    new_pop = []
+    while len(new_pop) < len(pop):
+        r = random.random()
+        prob = 0
+        for i in pop:
+            prob += i.prob
+            if prob > r:
+                new_pop.append(i)
+                break
+
+    return new_pop
