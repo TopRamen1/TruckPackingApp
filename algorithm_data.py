@@ -72,12 +72,52 @@ class DataFromFile:
 class Package:
     """Class needed for create packages and information about them"""
 
-    pass
+    def __init__(self, id_: int, address_: int, weight_: float):
+        """
+        :param id_: package id
+        :param address_: package address, information where specific package should be delivered
+        :param weight_: package weight
+        """
+        self.id = id_
+        self.address = address_
+        self.weight = weight_
+
+    def __str__(self) -> str:
+        return f"Package no. {self.id}, Address: {self.address}, Weight: {self.weight}".format(self=self)
+
+    @property
+    def info_package(self):
+        return f"Package no. {self.id}, Address: {self.address}, Weight: {self.weight}"
 
 class Truck:
     """Class needed for create trucks and information about them"""
 
-    pass
+    def __init__(self, id_: int, type_t_: str, load_: float, exp_cost_: float, min_fuel_use_: float,
+                 max_fuel_use_: float):
+        """
+        :param id_: truck id
+        :param type_t_: type of truck (example: "A", "B:, ...)
+        :param load_: maximum load of truck
+        :param exp_cost_: virtual indicator which shows cost value of employment and operation of trucks
+        :param min_fuel_use_: min. combustion of trucks
+        :param max_fuel_use_: max. combustion of trucks
+        """
+        self.id = id_
+        self.type_t = type_t_
+        self.load = load_
+        self.exp_cost = exp_cost_
+        self.min_fuel_use = min_fuel_use_
+        self.max_fuel_use = max_fuel_use_
+
+    def __str__(self) -> str:
+        return f"Truck no. {self.id}, Type: {self.type_t}, Load: {self.load}, Exploitation: {self.exp_cost}, Min. " \
+               f"combustion: {self.min_fuel_use}, Max. combustion: {self.max_fuel_use}".format(self=self)
+
+    @property
+    def info_truck(self):
+        return f"Truck no. {self.id}, Type: {self.type_t}, Load: {self.load}, Exploitation: {self.exp_cost}, Min. " \
+               f"combustion: {self.min_fuel_use}, Max. combustion: {self.max_fuel_use}".format(self=self)
+
 
 class Storage:
     """Class needed for create storages and information about them"""
