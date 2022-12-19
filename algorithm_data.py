@@ -118,11 +118,26 @@ class Truck:
         return f"Truck no. {self.id}, Type: {self.type_t}, Load: {self.load}, Exploitation: {self.exp_cost}, Min. " \
                f"combustion: {self.min_fuel_use}, Max. combustion: {self.max_fuel_use}".format(self=self)
 
-
 class Storage:
     """Class needed for create storages and information about them"""
 
-    pass
+    def __init__(self, id_: int, address_: int, distance_: float):
+        """
+        :param id_: storage id
+        :param address_: storage address (example: package with address: 1 goes to storage with address: 1)
+        :param distance_: distance from main storage to storage
+        """
+        self.id = id_
+        self.address = address_
+        self.distance = distance_
+
+    def __str__(self) -> str:
+        return f"Storage no. {self.id}, Address: {self.address}, Distance: {self.distance}".format(self=self)
+
+    @property
+    def info_storage(self):
+        return f"Storage no. {self.id}, Address: {self.address}, Distance: {self.distance}".format(self=self)
+
 
 class MainStorage:
     """Class needed for create main storage and all information about other smaller storages, trucks and packages"""
