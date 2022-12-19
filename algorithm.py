@@ -350,3 +350,128 @@ def crossover(data: MainStorage, ind1: Individual, ind2: Individual, num_cross_p
     children = (Individual(ch_t1, ch_p1), Individual(ch_t2, ch_p2))
 
     return children
+
+
+def cross_pop(data: MainStorage, pop: List[Individual], num_cross_points: List[int], cross_factor: float):
+    """Crossing children with old population
+    :return: new population"""
+
+    i = 0
+    new_pop = []
+    while i < len(pop) * cross_factor:
+        p1 = crossover(data, pop[i], pop[i + 1], num_cross_points)
+        new_pop.append(p1[0])
+        new_pop.append(p1[1])
+        i += 2
+    while len(new_pop) < len(pop):
+        r = random.random()
+        prob = 0
+        for i in pop:
+            prob += i.prob
+            if prob > r:
+                new_pop.append(i)
+                break
+    return new_pop
+
+
+def fix_ind(ch_t: List[List[int]], ch_p: List[int], data: MainStorage):
+    """Fixes gens in chromosome ch_t
+    :return: modified chromosomes with no doubled addresses"""
+
+    # Remove double addresses
+    for t_id in range(len(ch_t)):
+        if len(ch_t[t_id]) > 1:
+            a = random.choice(ch_t[t_id])
+            ch_t[t_id] = [a]
+            for p_id in range(len(ch_p)):
+                if ch_p[p_id] == t_id and data.list_of_packages[p_id].address != a:
+                    ch_p[p_id] = -1
+
+    ch_t = ex_fun.flat_list(ch_t)
+
+    # Compute cargo weights
+    cargo_w = [] * len(ch_t)
+
+    for t_id in range(len(ch_t)):
+        w_sum = 0
+        for p_id in range(len(ch_p)):
+            if ch_p[p_id] == t_id:
+                w_sum += data.list_of_packages[p_id].weight
+
+        cargo_w.append(w_sum)
+
+    # Remove packages from trucks if they are overloaded
+    for t_id in range(len(ch_t)):
+        if cargo_w[t_id] > data.list_of_trucks[t_id].load:
+            p_to_truck = []
+            for p_id in range(len(ch_p)):
+                if ch_p[p_id] == t_id:
+                    p_to_truck.append(p_id)
+
+            while cargo_w[t_id] > data.list_of_trucks[t_id].load:
+                # remove random package
+                p_id = random.choice(p_to_truck)
+                p_to_truck.remove(p_id)
+                ch_p[p_id] = -1
+                cargo_w[t_id] -= data.list_of_packages[p_id].weight
+
+    # Put all packages to place
+    for p_id in range(len(ch_p)):
+        if ch_p[p_id] == -1:
+            p = data.list_of_packages[p_id]
+
+            for t_id in range(len(ch_t)):
+                if ch_t[t_id] == p.address:
+                    w_sum = 0
+                    for p1_id in range(len(ch_p)):
+                        if ch_p[p1_id] == t_id:
+                            w_sum += data.list_of_packages[p1_id].weight
+
+                    if data.list_of_trucks[t_id].load >= w_sum + p.weight:
+                        ch_p[p_id] = t_id
+                        break
+
+            if ch_p[p_id] == -1:
+                free_trucks = []
+                for t_id in range(len(ch_t)):
+                    if ch_t[t_id] == -1:
+                        free_trucks.append(t_id)
+
+                t_id = random.choice(free_trucks)
+                ch_p[p_id] = t_id
+                ch_t[t_id] = data.list_of_packages[p_id].address
+
+    return ch_t, ch_p
+
+
+def mutation(data: MainStorage, pop: List[Individual], mutation_factor: float) -> List[Individual]:
+    """Mutates random gens with probability
+    :return: population with small percentage of mutated individuals"""
+
+    random_ind = []
+    duplications = []
+    probability = len(pop) * mutation_factor
+
+    # Choose random individuals with probability
+    while len(random_ind) < probability:
+        for i in range(int(probability)):
+            x = random.choice(range(0, len(pop), 1))
+            if x not in duplications:
+                random_ind.append(x)
+                duplications.append(x)
+            if len(random_ind) == probability:
+                break
+
+    ch_t_list = mutation_helper(pop, random_ind)
+
+    # Mutate random gen in chromosome ch_p
+    for id, i in enumerate(pop):
+        for id2, j in enumerate(random_ind):
+            if id == j:
+                new_ch_p = i.ch_p.copy()
+                gen_x = random.choice(range(0, len(data.list_of_packages), 1))
+                x = random.choice(range(0, len(data.list_of_trucks), 1))
+                new_ch_p[gen_x] = x
+                ch_t_list[id2][x].append(data.list_of_packages[gen_x].address)
+                i.ch_t, i.ch_p = fix_ind(ch_t_list[id2], new_ch_p, data)
+    return pop
