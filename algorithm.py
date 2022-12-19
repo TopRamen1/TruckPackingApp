@@ -289,3 +289,64 @@ def selection(data: MainStorage, pop: List[Individual]):
                 break
 
     return new_pop
+
+
+def crossover(data: MainStorage, ind1: Individual, ind2: Individual, num_cross_points: List[int]) -> \
+        Tuple[Individual, Individual]:
+    """Crossing specific parts of chromosome according to crossing points
+       :param data: class object - MainStorage
+       :param ind1: one of the parents who will be crossing with the other parent
+       :param ind2: second one of the parents
+       :param num_cross_points: number of crossing points (example:list [1,3,2] tells us that first element (gen) of one
+                                parent part of chromosome (ch_p) will change places with the other parent, then 3 next
+                                gens in ch_p in one parent will change places with 3 next gens in second parent, etc.)
+       :return: children (new individual who is the part of the new population)"""
+
+    pop = [ind1, ind2]
+    # Dict of number of used storages and number of individual packages in used storages
+    dict_of_used_p_s = data.get_used_sto_pack
+
+    # Generate divisors for every part of chromosome (ch_p), parts are the number of storages
+    list_divisors = ex_fun.ge_div(dict_of_used_p_s, num_cross_points)
+
+    # Generate List of empty Lists
+    ch_p1 = []  # empty package's chromosome
+    for i, j in enumerate(list_divisors):
+        for p, k in enumerate(j):
+            ch_p1.append([] * k)
+    ch_p2 = ch_p1[:]
+
+    # Generate lists which tells you which genes to take from a particular parent
+    rand_lst1, rand_lst2 = ex_fun.ge_rand(list_divisors, num_cross_points)
+
+    # Generate start position of each part of package(split based on address) and number of cuts of chromosome(crossing)
+    pos = ex_fun.get_position(dict_of_used_p_s)
+    counter = ex_fun.get_counter(list_divisors)
+
+    # Gain algorithm for crossover: generate children from chromosome of individual parents
+    for num, it in enumerate(list_divisors):
+        for i in rand_lst1[num]:
+            pos_t = pos[num]
+            ch_p1[i + counter[num]] = pop[0].ch_p[(pos_t + (it[i] * i)):(pos_t + (it[i] * (i + 1)))]
+            ch_p2[i + counter[num]] = pop[1].ch_p[(pos_t + (it[i] * i)):(pos_t + (it[i] * (i + 1)))]
+
+        for i in rand_lst2[num]:
+            pos_t = pos[num]
+            ch_p1[i + counter[num]] = pop[1].ch_p[(pos_t + (it[i] * i)):(pos_t + (it[i] * (i + 1)))]
+            ch_p2[i + counter[num]] = pop[0].ch_p[(pos_t + (it[i] * i)):(pos_t + (it[i] * (i + 1)))]
+
+    # Flattened function to do List from List of Lists
+    ch_p1 = ex_fun.flat_list(ch_p1)
+    ch_p2 = ex_fun.flat_list(ch_p2)
+
+    # Make left part of chromosome: ch_t from right part of chromosome: ch_p
+    ch_t1 = ex_fun.cht_from_chp(data.list_of_trucks, data.list_of_packages, ch_p1)
+    ch_t2 = ex_fun.cht_from_chp(data.list_of_trucks, data.list_of_packages, ch_p2)
+
+    # Fix all genes where occurs conflict
+    ch_t1, ch_p1 = fix_ind(ch_t1, ch_p1, data)
+    ch_t2, ch_p2 = fix_ind(ch_t2, ch_p2, data)
+
+    children = (Individual(ch_t1, ch_p1), Individual(ch_t2, ch_p2))
+
+    return children
