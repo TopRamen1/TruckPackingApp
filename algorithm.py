@@ -475,3 +475,29 @@ def mutation(data: MainStorage, pop: List[Individual], mutation_factor: float) -
                 ch_t_list[id2][x].append(data.list_of_packages[gen_x].address)
                 i.ch_t, i.ch_p = fix_ind(ch_t_list[id2], new_ch_p, data)
     return pop
+
+
+def mutation_helper(pop: List[Individual], random_ind: List[int]) -> List[List[List[int]]]:
+    """Helper function"""
+
+    new_ch_t = []
+    for id, i in enumerate(pop):
+        for j in random_ind:
+            if id == j:
+                help_list = []
+                for e in i.ch_t:
+                    help_list.append([e])
+                new_ch_t.append(help_list)
+    return new_ch_t
+
+
+def print_pop(pop: List[Individual], text: str, p: bool):
+    """Prints population"""
+
+    if p:
+        print(text)
+        j = 0
+        for i in pop:
+            print(j, i)
+            j += 1
+        print('\n')
